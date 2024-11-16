@@ -1,0 +1,103 @@
+blueprint:
+  name: "Contrôle de la Sirène Frient"
+  description: "Active ou désactive la sirène Frient via MQTT"
+  domain: script
+  input:
+    mqtt_topic:
+      name: "Sujet MQTT de la sirène Frient"
+      description: "Le sujet MQTT utilisé pour contrôler la sirène."
+      default: "zigbee2mqtt/LE_NOM_DE_VOTRE_SIRENE/set"
+    action:
+      name: "Action"
+      description: "Choisir entre activer ou désactiver la sirène"
+      selector:
+        select:
+          options:
+            - label: "Activer"
+              value: "activate"
+            - label: "Désactiver"
+              value: "deactivate"
+    mode:
+      name: "Mode d'alerte"
+      description: "Sélectionner le type d'alerte pour la sirène"
+      default: burglar
+      selector:
+        select:
+          options:
+            - label: "Effraction"
+              value: "burglar"
+            - label: "Incendie"
+              value: "fire"
+            - label: "Secours"
+              value: "emergency"
+            - label: "Police - Panic"
+              value: "police_panic"
+            - label: "Incendie - Panic"
+              value: "fire_panic"
+            - label: "Secours - Panic"
+              value: "emergency_panic"
+    duration:
+      name: "Durée d'activation (secondes)"
+      description: "Durée (en secondes) pendant laquelle la sirène restera active."
+      default: 1800
+    level:
+      name: "Niveau sonore"
+      description: "Niveau sonore de la sirène."
+      default: "very_high"
+      selector:
+        select:
+          options:
+            - low
+            - medium
+            - high
+            - very_high
+    strobe:
+      name: "Effet stroboscopique"
+      description: "Activer l'effet stroboscopique."
+      default: true
+      selector:
+        boolean:
+
+variables:
+  mqtt_topic: !input mqtt_topic
+  action: !input action
+  mode: !input mode
+  duration: !input duration
+  level: !input level
+  strobe: !input strobe
+
+mode: single
+sequence:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ action == 'activate' }}"
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{ mqtt_topic }}"
+              payload: >
+                {{ {
+                  "warning": {
+                    "mode": mode,
+                    "level": level,
+                    "strobe": strobe,
+                    "duration": duration
+                  }
+                } | tojson }}
+      - conditions:
+          - condition: template
+            value_template: "{{ action == 'deactivate' }}"
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: "{{ mqtt_topic }}"
+              payload: >
+                {{ {
+                  "warning": {
+                    "mode": "stop",
+                    "level": "low",
+                    "strobe": true,
+                    "duration": 1
+                  }
+                } | tojson }}
