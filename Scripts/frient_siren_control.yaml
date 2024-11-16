@@ -47,10 +47,14 @@ blueprint:
       selector:
         select:
           options:
-            - low
-            - medium
-            - high
-            - very_high
+            - label: "Faible"
+              value: "low"
+            - label: "Moyen"
+              value: "medium"
+            - label: "Fort"
+              value: "high"
+            - label: "Très fort"
+              value: "very_high"
     strobe:
       name: "Effet stroboscopique"
       description: "Activer l'effet stroboscopique."
