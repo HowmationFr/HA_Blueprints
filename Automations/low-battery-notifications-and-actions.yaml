@@ -1,0 +1,1129 @@
+blueprint:
+  name: Notifications et Actions pour Batterie Faible
+  description: >
+    # 🪫 Notifications et Actions pour Batterie Faible
+
+
+    ⚠️ Ceci est une traduction de **Howmation** de la blueprint « [Low Battery Notifications & Actions]() » originalement conçue par **Blacky**.
+
+
+    **Version: 2.9**
+
+
+    🚀 Restez chargé, restez connecté ! Automatisons et prenons le contrôle de la maintenance de vos batteries !🔋⚡
+
+
+    **Si vous aimez mes blueprints et souhaitez montrer votre soutien ou simplement dire merci ?** [Cliquez Ici](https://www.paypal.com/donate/?hosted_button_id=WAZS3QSDTPGA8) 🙂 (donation pour Blacky)
+
+
+    <details>
+    <summary><b>Le Processus d'Automatisation :</b> 👈</summary>
+
+      - **Options de Déclenchement :**
+        - **Assistant Bouton :** Appuyez sur un bouton dans l'interface utilisateur (IU) pour vérifier les niveaux de batterie.
+        - **Heure et Jour :** Vérifie automatiquement et périodiquement les niveaux de batterie à une heure et un jour donnés.
+
+      - **Capteurs de Batterie :**
+        - Détecte automatiquement tous les capteurs de batterie utilisés dans Home Assistant.
+        - Définit un pourcentage d'avertissement de batterie faible pour identifier toutes les batteries en dessous de ce niveau.
+        - Détecte les batteries Faibles, indisponibles et inconnues.
+        - Exclut des capteurs de batterie spécifiques des notifications.
+        - Crée un groupe personnalisé de capteurs de batterie avec son propre pourcentage d'avertissement de batterie faible indépendant.
+
+      - **Options de Notification :**
+        - Option d'envoyer des messages à un ou plusieurs appareils.
+        - Option d'afficher vos notifications directement dans l'interface utilisateur de Home Assistant (IU).
+        - Choisissez quels capteurs de batterie utiliser, puis sélectionnez leurs états parmi trois messages prédéfinis :
+            - Niveau % Batterie Faible + Niveau Batterie Faible + Indisponible + Inconnu.
+            - Niveau % Batterie Faible et Niveau Batterie Faible.
+            - Capteurs Indisponibles ou Inconnus.
+        - Option de recevoir un message de confirmation si toutes les batteries sont correctes.
+        - Option d'utiliser des boutons d'action dans votre notification d'appareil qui vous permet d'ajouter vos batteries faibles à une liste de tâches.
+        - Compatible avec les appareils Apple iOS et Android.
+
+      - **Actions Personnalisées :**
+        - Personnalisez les actions selon vos préférences et besoins, améliorant la fonctionnalité des automatisations.
+        - Utilisez 10 capteurs de batterie prédéterminés personnalisés dans la blueprint pour des actions plus adaptées et précises.
+        - Configurez des actions personnalisées pour inclure des fonctionnalités comme la personnalisation des notifications ou la lecture d'annonces sur des plateformes comme The Voice (HA), Google, Alexa, TTS, etc.
+
+      - **Conditions Personnalisées :**
+        - Entrez toutes conditions personnalisées pour personnaliser davantage le processus d'automatisation.
+    </details>
+
+
+    Besoin d'aide ? 
+
+    - FAQ : [Cliquez Ici](https://community.home-assistant.io/t/653754/2?u=blacky)
+
+    - Support Communautaire Incluant les Mises à Jour : [Cliquez Ici](https://community.home-assistant.io/t/653754)
+
+
+    Requis = *
+  domain: automation
+  input:
+    trigger_settings:
+      name: "Déclencheurs *"
+      icon: mdi:cog-outline
+      description: >
+        Vous devez sélectionner au moins un déclencheur *
+      collapsed: true
+      input:
+        include_button:
+          name: Utiliser le Déclencheur Assistant Bouton (Optionnel)
+          description: >
+            Sélectionnez si vous souhaitez qu'un assistant bouton déclenche l'automatisation.
+            C'est utile si vous voulez vérifier les niveaux de batterie en appuyant sur un bouton dans l'IU.
+
+
+            Pour plus d'informations sur la création d'un assistant bouton [Cliquez Ici](https://community.home-assistant.io/t/653754/4)
+          default: disable_button_trigger
+          selector:
+            select:
+              options:
+                - label: Utiliser un déclencheur bouton
+                  value: "enable_button_trigger"
+                - label: Ne pas utiliser de déclencheur bouton
+                  value: "disable_button_trigger"
+        button_entity:
+          name: Assistant Bouton
+          description: >
+            Saisissez votre assistant bouton.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_button
+        include_time:
+          name: Utiliser le Déclencheur Temporel (Optionnel)
+          description: >
+            Sélectionnez si vous souhaitez utiliser le déclencheur temporel.
+            C'est utile si vous voulez vérifier périodiquement les niveaux de batterie à une heure et un jour donnés.
+          default: time_disabled
+          selector:
+            select:
+              options:
+                - label: Activer les options temporelles
+                  value: "time_enabled"
+                - label: Désactiver les options temporelles
+                  value: "time_disabled"
+        time:
+          name: Heure
+          description: >
+            Définissez l'heure à laquelle vous souhaitez exécuter l'automatisation.
+          default: "00:00:00"
+          selector:
+            time:
+        weekday_options:
+          name: Jours de la Semaine
+          description: >
+            Sélectionnez les jours de la semaine où vous souhaitez que l'automatisation s'exécute.
+          default:
+            - mon
+            - tue
+            - wed
+            - thu
+            - fri
+            - sat
+            - sun
+          selector:
+            select:
+              multiple: true
+              mode: list
+              options:
+                - label: Lundi
+                  value: "mon"
+                - label: Mardi
+                  value: "tue"
+                - label: Mercredi
+                  value: "wed"
+                - label: Jeudi
+                  value: "thu"
+                - label: Vendredi
+                  value: "fri"
+                - label: Samedi
+                  value: "sat"
+                - label: Dimanche
+                  value: "sun"
+    battery_settings:
+      name: "Paramètres de Batterie"
+      icon: mdi:battery-alert-variant-outline
+      collapsed: true
+      input:
+        battery_level:
+          name: Niveau d'Avertissement Batterie Faible
+          description: >
+            Définissez le pourcentage d'avertissement de batterie faible pour identifier toutes les batteries en dessous de ce niveau.
+          default: 20
+          selector:
+            number:
+              min: 1
+              max: 100
+              step: 1
+              unit_of_measurement: "%"
+        exclude_sensors:
+          name: Capteurs de Batterie Exclus (Optionnel)
+          description: >
+            Choisissez les capteurs de batterie à exclure lors de l'exécution de l'automatisation.
+            L'automatisation tentera de détecter tous les capteurs de batterie utilisés dans Home Assistant, y compris ceux de vos téléphones, tablettes, etc.
+            Cependant, il n'est pas toujours nécessaire ou souhaitable de surveiller ces batteries.
+            Sélectionner ces batteries ici les exclura de vos notifications.
+
+
+            **NOTE** - Vous pouvez seulement utiliser des entités et des étiquettes. Les zones et appareils ne sont pas supportés.
+          default: { entity_id: [] }
+          selector:
+            target:
+              entity:
+                device_class: battery
+        custom_group:
+          name: Capteurs de Batterie - Groupe Personnalisé (Optionnel)
+          description: >
+            Vous pouvez sélectionner un groupe personnalisé de capteurs de batterie à inclure dans vos notifications.
+            Ce groupe personnalisé a son propre paramètre indépendant 'Niveau d'Avertissement Batterie Faible' ci-dessous.
+            Lors de l'utilisation de toutes les batteries avec le groupe personnalisé dans une seule automatisation, il est recommandé d'exclure le groupe personnalisé de batteries spécifié ci-dessus dans la section 'Capteurs de Batterie Exclus'.
+
+
+            Les capteurs de batterie exclus ne sont pas liés à ce groupe personnalisé.
+
+
+            **NOTE** - Vous pouvez seulement utiliser des entités et des étiquettes. Les zones et appareils ne sont pas supportés.
+          default: { entity_id: [] }
+          selector:
+            target:
+              entity:
+                device_class: battery
+        custom_group_battery_level:
+          name: Groupe Personnalisé - Niveau d'Avertissement Batterie Faible
+          description: >
+            Définissez le pourcentage d'avertissement de batterie faible pour identifier toutes les batteries en dessous de ce niveau.
+          default: 20
+          selector:
+            number:
+              min: 1
+              max: 100
+              step: 1
+              unit_of_measurement: "%"
+    easy_notify_settings:
+      name: "Notification Facile"
+      icon: mdi:bell-check-outline
+      collapsed: true
+      input:
+        include_easy_notify:
+          name: Utiliser la Notification Facile - Options de Notification d'Appareil (Optionnel)
+          description: >
+            Activer cette option enverra des notifications aux appareils sélectionnés ci-dessous.
+            Elle vous permet de choisir quels capteurs de batterie utiliser, puis de sélectionner leurs états parmi trois messages prédéfinis.
+            Vous pouvez également choisir de recevoir un message de confirmation si toutes les batteries sont correctes.
+            Pour une personnalisation plus poussée ou pour intégrer avec des assistants vocaux comme HA, Google, Alexa, TTS, etc., veuillez explorer les options d'action personnalisées ci-dessous.
+          default: disabled_easy_notify
+          selector:
+            select:
+              options:
+                - label: Activer la Notification d'Appareil
+                  value: "enable_easy_notify"
+                - label: Activer la Notification d'Appareil + Message de Confirmation OK
+                  value: "enable_easy_okay_notify"
+                - label: Désactiver la Notification d'Appareil
+                  value: "disabled_easy_notify"
+        include_persistent_notification:
+          name: Utiliser la Notification Facile - Options de Notification IU (Optionnel)
+          description: >
+            Activer cette option affichera les notifications directement dans l'interface utilisateur de Home Assistant (IU).
+            Elle vous permet de choisir quels capteurs de batterie utiliser, puis de sélectionner leurs états parmi trois messages prédéfinis.
+            Vous pouvez également choisir de recevoir un message de confirmation dans l'IU si toutes les batteries sont correctes.
+            Pour une personnalisation plus poussée ou pour intégrer avec des assistants vocaux comme HA, Google, Alexa, TTS, etc., veuillez explorer les options d'action personnalisées ci-dessous.
+          default: disabled_persistent_notification
+          selector:
+            select:
+              options:
+                - label: Activer la Notification IU
+                  value: "enable_persistent_notification"
+                - label: Activer la Notification IU + Message de Confirmation OK
+                  value: "enable_persistent_okay_notification"
+                - label: Désactiver la Notification IU
+                  value: "disabled_persistent_notification"
+        sensor_selection:
+          name: Sélection de Capteurs
+          description: >
+            Veuillez sélectionner quels capteurs vous souhaitez inclure dans vos notifications.
+          default: enable_all_sensors
+          selector:
+            select:
+              options:
+                - label: Utiliser les Capteurs de Batterie - Groupe Personnalisé
+                  value: "enable_battery_sensors_custom_group"
+                - label: Utiliser Tous les Capteurs de Batterie Moins les Capteurs de Batterie Exclus
+                  value: "enable_all_sensors"
+                - label: Utiliser Tous les Capteurs de Batterie Moins les Capteurs de Batterie Exclus + Groupe Personnalisé
+                  value: "enable_all_and_custom_group_sensors"
+        notify_device:
+          name: Appareils Notifiés (Optionnel)
+          description: >
+            Si vous avez activé les notifications d'appareil ci-dessus, veuillez sélectionner les appareils pour recevoir les notifications.
+          default: []
+          selector:
+            device:
+              filter:
+                - integration: mobile_app
+              multiple: true
+        notify_title:
+          name: Titre
+          description: >
+            Entrez le titre de notification de votre message.
+          default: Notification Batterie Faible
+          selector:
+            text:
+        notify_message:
+          name: Message
+          description: >
+            Choisissez un des trois messages prédéfinis dans le menu déroulant.
+
+
+            **1 - Niveau % Batterie Faible + Niveau Batterie Faible + Indisponible + Inconnu**
+            Inclut les capteurs avec des pourcentages de batterie en dessous du niveau d'avertissement faible, dans un état de batterie faible, ou marqués comme indisponibles ou inconnus.
+
+
+            **2 - Niveau % Batterie Faible et Niveau Batterie Faible**
+            Inclut les capteurs avec des pourcentages de batterie en dessous du niveau d'avertissement faible ou dans un état de batterie faible.
+
+
+            **3 - Capteurs Indisponibles ou Inconnus**
+            Inclut les capteurs qui sont indisponibles ou ont un état inconnu.
+          default: all_sensors
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: 1 - Niveau % Batterie Faible + Niveau Batterie Faible + Indisponible + Inconnu
+                  value: "all_sensors"
+                - label: 2 - Niveau % Batterie Faible et Niveau Batterie Faible
+                  value: "sensors"
+                - label: 3 - Capteurs Indisponibles ou Inconnus
+                  value: "unavailable_sensors"
+        notify_okay_message:
+          name: Message de Confirmation OK
+          description: >
+            Entrez le message de notification que vous souhaitez recevoir quand toutes vos batteries sont correctes.
+          default: OUI ! Toutes les batteries sont correctes :)
+          selector:
+            text:
+        notify_interruption_level:
+          name: Niveau d'Interruption - iOS Seulement
+          description: >
+            Sur les appareils exécutant iOS 15 et ultérieur, vous pouvez configurer le niveau d'interruption pour vos notifications pour vous assurer qu'elles sont livrées selon vos préférences.
+            Choisissez le niveau d'interruption désiré dans la liste déroulante.
+            Les notifications critiques et sensibles au temps doivent être activées dans l'App Home Assistant, et les notifications sensibles au temps doivent être autorisées dans vos paramètres Focus.
+
+
+            Pour plus d'informations sur les niveaux d'interruption [Cliquez Ici](https://community.home-assistant.io/t/653754/192?u=blacky)
+          default: active
+          selector:
+            select:
+              mode: dropdown
+              options:
+                - label: Par Défaut
+                  value: "active"
+                - label: Notifications Critiques
+                  value: "critical"
+                - label: Notifications Sensibles au Temps
+                  value: "time-sensitive"
+                - label: Notifications Silencieuses Sans Réveil d'Écran
+                  value: "passive"
+        notify_sound:
+          name: Son de Notification - iOS Seulement
+          description: >
+            L'app Home Assistant pour iOS inclut des sons de notification intégrés, et vous pouvez importer des sons depuis votre appareil iOS dans l'app.
+            Des sons personnalisés peuvent également être ajoutés via iTunes ou depuis votre stockage cloud.
+            Lors de la saisie d'un son, assurez-vous d'utiliser le nom de fichier complet, incluant l'extension.
+
+
+            Pour plus d'informations sur l'utilisation des sons dans l'app Home Assistant, [Cliquez Ici](https://community.home-assistant.io/t/653754/192?u=blacky)
+          default: []
+          selector:
+            text:
+        notify_data:
+          name: Options Android Seulement (Optionnel)
+          description: >
+            Les notifications **Haute Priorité** s'assurent que vous recevez les alertes importantes immédiatement.
+            Ces notifications contournent les délais de livraison normaux et sont livrées instantanément à votre appareil.
+
+
+            Les **Notifications Collantes** s'assurent que les alertes importantes ne sont pas supprimées quand sélectionnées. Elles restent sur votre écran de notification jusqu'à ce que vous les effaciez ou les balayiez activement, garantissant que les informations critiques restent visibles jusqu'à ce qu'elles soient traitées.
+
+
+            Le **Canal de Notification** vous permet d'organiser facilement différents paramètres de notification,
+            incluant les sons de notification, vibrations, et autres fonctionnalités spécifiques à l'appareil.
+            Si vous choisissez cette option, veuillez entrer le nom de canal désiré ci-dessous.
+          default: []
+          selector:
+            select:
+              multiple: true
+              options:
+                - label: Haute Priorité
+                  value: "high_priority"
+                - label: Notification Collante
+                  value: "sticky"
+                - label: Canal de Notification
+                  value: "channel"
+        notify_channel:
+          name: Canal de Notification - Android Seulement
+          description: >
+            Si vous avez choisi d'utiliser un canal de notification, entrez simplement le nom d'un canal existant pour appliquer ses paramètres pré-configurés.
+            Si vous n'avez pas encore de canal, vous pouvez en créer un nouveau en entrant un nom ici.
+            Quand votre automatisation envoie la première notification, elle créera le canal sur votre appareil.
+            Après la création du canal, vous pouvez personnaliser ses paramètres de notification selon votre préférence directement sur votre appareil.
+
+
+            Pour plus d'informations sur les canaux de notification [Cliquez Ici](https://community.home-assistant.io/t/653754/192?u=blacky)
+          default: []
+          selector:
+            text:
+    action_buttons_settings:
+      name: "Boutons d'Action"
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        notify_action_buttons:
+          name: Notification Facile - Boutons d'Action (Optionnel)
+          description: >
+            Améliorez vos notifications d'appareil avec une fonctionnalité de bouton de liste de tâches actionnable.
+            Avec juste un maintien, relâchement et tap, ajoutez sans effort les éléments sélectionnés de votre notification de batterie faible à n'importe quelle de vos listes de tâches choisies. 
+            De plus, pour une assurance supplémentaire, vous pouvez choisir de recevoir un message de confirmation confirmant l'action.
+          default: disabled_notify_action_buttons
+          selector:
+            select:
+              options:
+                - label: Ajouter des Boutons d'Action Liste de Tâches
+                  value: "enable_to_do_list_button"
+                - label: Ajouter des Boutons d'Action Liste de Tâches + Message de Confirmation
+                  value: "enable_to_do_list_button_and_confirmation"
+                - label: Désactiver les Boutons d'Action
+                  value: "disabled_notify_action_buttons"
+        to_do_list:
+          name: Boutons d'Action Notification Facile - Sélection de Liste de Tâches
+          description: >
+            Choisissez la liste de tâches où vous souhaitez ajouter votre tâche.
+
+
+            **Note** - La liste de courses par défaut n'est pas compatible en raison de son manque de capacité de description. 
+            Cependant, toutes les autres listes de tâches sont entièrement supportées.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: todo
+        to_do_task_title:
+          name: Boutons d'Action Notification Facile - Titre de Tâche
+          description: >
+            Quand le bouton d'action est pressé, il ajoutera une tâche à votre liste de tâches choisie.
+            Veuillez entrer le titre que vous souhaitez pour votre tâche de liste de tâches
+          default: Batteries à Remplacer
+          selector:
+            text:
+        action_button_to_do:
+          name: Boutons d'Action Notification Facile - Bouton d'Action
+          description: >
+            Veuillez spécifier le nom pour le bouton d'action à afficher dans la notification.
+            Quand pressé, ce bouton ajoute sans effort une tâche à votre liste de tâches choisie.
+          default: Ajouter à la Liste de Tâches !
+          selector:
+            text:
+        action_button_cancel:
+          name: Boutons d'Action Notification Facile - Bouton Annuler
+          description: >
+            Veuillez spécifier le nom pour le bouton annuler à afficher dans la notification.
+            Ce bouton vous permet d'annuler le processus d'ajout de tâche.
+          default: Annuler
+          selector:
+            text:
+        action_button_confirmation_title:
+          name: Boutons d'Action Notification Facile - Titre de Confirmation Bouton d'Action et Annuler
+          description: >
+            Veuillez entrer un titre pour le message de notification de confirmation quand un bouton d'action ou un bouton annuler est pressé.
+          default: Confirmation Batterie Faible
+          selector:
+            text:
+        action_button_confirmation_message:
+          name: Boutons d'Action Notification Facile - Message de Confirmation Bouton d'Action
+          description: >
+            Veuillez entrer le message pour le message de notification de confirmation quand le bouton d'action est pressé.
+          default: Vos batteries faibles ont été ajoutées à votre liste de tâches
+          selector:
+            text:
+        cancel_action_button_confirmation_message:
+          name: Boutons d'Action Notification Facile - Message de Confirmation Bouton Annuler
+          description: >
+            Veuillez entrer le message pour le message de notification de confirmation quand le bouton annuler est pressé.
+          default: Annulé - Rien n'a été ajouté à votre liste de tâches
+          selector:
+            text:
+    custom_actions_settings:
+      name: "Actions Personnalisées"
+      icon: mdi:code-tags
+      collapsed: true
+      input:
+        include_custom_actions:
+          name: Utiliser les Options d'Action Personnalisées (Optionnel)
+          description: >
+            Vous pouvez ajouter toutes actions personnalisées que vous souhaitez exécuter quand l'automatisation est déclenchée.
+            Cela peut inclure la personnalisation des notifications ou la lecture d'annonces sur des plateformes comme The Voice (HA), Google, Alexa, TTS, etc.
+          default: disabled_custom_actions
+          selector:
+            select:
+              options:
+                - label: Activer les Actions Personnalisées
+                  value: "enable_custom_actions"
+                - label: Désactiver les Actions Personnalisées
+                  value: "disabled_custom_actions"
+        custom_actions:
+          name: Actions Personnalisées
+          description: >
+            Ajoutez vos actions personnalisées que vous souhaitez exécuter quand l'automatisation est déclenchée.
+            Ci-dessous se trouvent 10 capteurs que vous pouvez inclure dans vos actions, selon vos préférences.
+
+
+            **Tous les Capteurs de Batterie Moins les Exclus**
+
+            1 - Utilisez "{{all_sensors}}" pour - Niveau % Batterie Faible + Niveau Batterie Faible + Indisponible + Inconnu.
+
+            2 - Utilisez "{{sensors}}" pour - Niveau % Batterie Faible et Niveau Batterie Faible.
+
+            3 - Utilisez "{{unavailable_sensors}}" pour - Capteurs Indisponibles ou Inconnus.
+
+            4 - Utilisez "{{sensors_names}}" pour - Niveau % Batterie Faible et Niveau Batterie Faible - Nom de capteur seulement.
+
+            5 - Utilisez "{{unavailable_sensors_names}}" pour - Capteurs Indisponibles ou Inconnus - Nom de capteur seulement.
+
+
+            **Capteurs de Batterie - Groupe Personnalisé**
+
+            1 - Utilisez "{{all_sensors_custom_group}}" pour - Niveau % Batterie Faible + Niveau Batterie Faible + Indisponible + Inconnu.
+
+            2 - Utilisez "{{sensors_custom_group}}" pour - Niveau % Batterie Faible et Niveau Batterie Faible.
+
+            3 - Utilisez "{{unavailable_sensors_custom_group}}" pour - Capteurs Indisponibles ou Inconnus.
+
+            4 - Utilisez "{{sensors_names_custom_group}}" pour - Niveau % Batterie Faible et Niveau Batterie Faible - Nom de capteur seulement.
+
+            5 - Utilisez "{{unavailable_sensors_names_custom_group}}" pour - Capteurs Indisponibles ou Inconnus - Nom de capteur seulement.
+
+
+            Pour plus d'informations sur l'utilisation de ces capteurs dans vos actions [Cliquez Ici](https://community.home-assistant.io/t/653754/21)
+          default: []
+          selector:
+            action:
+    global_conditions_settings:
+      name: "Conditions Globales"
+      icon: mdi:earth
+      collapsed: true
+      input:
+        global_conditions:
+          name: Conditions Globales
+          description: >
+            Entrez toutes conditions globales que vous souhaitez appliquer à l'automatisation.
+          default: []
+          selector:
+            condition:
+
+mode: restart
+max_exceeded: silent
+
+variables:
+  include_button: !input include_button
+  button_entity: !input button_entity
+  include_time: !input include_time
+  time: !input time
+  weekday_options: !input weekday_options
+  battery_level: !input battery_level
+  exclude_sensors: !input exclude_sensors
+  custom_group: !input custom_group
+  custom_group_battery_level: !input custom_group_battery_level
+  include_easy_notify: !input include_easy_notify
+  include_persistent_notification: !input include_persistent_notification
+  sensor_selection: !input sensor_selection
+  notify_device: !input notify_device
+  notify_title: !input notify_title
+  notify_message: !input notify_message
+  notify_okay_message: !input notify_okay_message
+  notify_interruption_level: !input notify_interruption_level
+  notify_sound: !input notify_sound
+  notify_data: !input notify_data
+  notify_channel: !input notify_channel
+  notify_action_buttons: !input notify_action_buttons
+  to_do_list: !input to_do_list
+  to_do_task_title: !input to_do_task_title
+  action_button_to_do: !input action_button_to_do
+  action_button_cancel: !input action_button_cancel
+  action_button_confirmation_title: !input action_button_confirmation_title
+  action_button_confirmation_message: !input action_button_confirmation_message
+  cancel_action_button_confirmation_message: !input cancel_action_button_confirmation_message
+  include_custom_actions: !input include_custom_actions
+  global_conditions: !input global_conditions
+
+  # Capteurs exclus pour entités et étiquettes
+
+  all_exclude_sensors: >-
+    {% set label_entities_list = label_entities(exclude_sensors.label_id) if exclude_sensors.label_id is defined and label_entities(exclude_sensors.label_id) is not none else [] %}
+    {% set entity_list = exclude_sensors.entity_id if exclude_sensors.entity_id is defined else [] %}
+    {% if entity_list is string %}
+      {% set entity_list = [entity_list] %}
+    {% endif %}
+    {% set all_exclude_sensors = label_entities_list + entity_list %}
+    {{ all_exclude_sensors }}
+
+  # Capteurs de groupe personnalisé pour entités et étiquettes
+
+  custom_group_sensors: >-
+    {% set label_entities_list = label_entities(custom_group.label_id) if custom_group.label_id is defined and label_entities(custom_group.label_id) is not none else [] %}
+    {% set entity_list = custom_group.entity_id if custom_group.entity_id is defined else [] %}
+    {% if entity_list is string %}
+      {% set entity_list = [entity_list] %}
+    {% endif %}
+    {% set custom_group_sensors = label_entities_list + entity_list %}
+    {{ custom_group_sensors }}
+
+  # Données d'option de notification d'appareil
+
+  device_message_data: >-
+    {% set message = namespace(data={}) %}
+    {% set push = namespace(data={}) %}
+    {% if notify_interruption_level in ['active', 'critical', 'time-sensitive', 'passive'] %}
+      {% set push.data = dict(push.data, **{ 'interruption-level': notify_interruption_level }) %}
+    {% endif %}
+    {% if notify_sound != [] %}
+      {% set push.data = dict(push.data, **{ 'sound': notify_sound }) %}
+    {% endif %}
+    {% if push.data %}
+      {% set message.data = dict(message.data, **{ 'push': push.data }) %}
+    {% endif %}
+    {% if 'high_priority' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'ttl': 0, 'priority': 'high' }) %}
+    {% endif %}
+    {% if 'channel' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'channel': notify_channel }) %}
+    {% endif %}
+    {% if 'sticky' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'sticky': "true" }) %}
+    {% endif %}
+    {{ message.data }}
+
+  # Données d'option de notification d'appareil avec boutons d'action
+
+  device_message_data_action_button: >-
+    {% set message = namespace(data={}) %}
+    {% set push = namespace(data={}) %}
+    {% if notify_interruption_level in ['active', 'critical', 'time-sensitive', 'passive'] %}
+      {% set push.data = dict(push.data, **{ 'interruption-level': notify_interruption_level }) %}
+    {% endif %}
+    {% if notify_sound != [] %}
+      {% set push.data = dict(push.data, **{ 'sound': notify_sound }) %}
+    {% endif %}
+    {% if push.data %}
+      {% set message.data = dict(message.data, **{ 'push': push.data }) %}
+    {% endif %}
+    {% if 'high_priority' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'ttl': 0, 'priority': 'high' }) %}
+    {% endif %}
+    {% if 'channel' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'channel': notify_channel }) %}
+    {% endif %}
+    {% if 'sticky' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'sticky': "true" }) %}
+    {% endif %}
+    {% set actions = [
+      {'action': action_button_to_do, 'title': action_button_to_do},
+      {'action': action_button_cancel, 'title': action_button_cancel}
+    ] %}
+      {% set message.data = dict(message.data, **{ 'actions': actions }) %}
+    {{ message.data }}
+
+  # Données d'option de notification d'appareil avec liens de confirmation vers liste de tâches
+
+  device_confirmation_message_data: >-
+    {% set message = namespace(data={}) %}
+    {% set push = namespace(data={}) %}
+    {% if notify_interruption_level in ['active', 'critical', 'time-sensitive', 'passive'] %}
+      {% set push.data = dict(push.data, **{ 'interruption-level': notify_interruption_level }) %}
+    {% endif %}
+    {% if notify_sound != [] %}
+      {% set push.data = dict(push.data, **{ 'sound': notify_sound }) %}
+    {% endif %}
+    {% if push.data %}
+      {% set message.data = dict(message.data, **{ 'push': push.data }) %}
+    {% endif %}
+    {% if 'high_priority' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'ttl': 0, 'priority': 'high' }) %}
+    {% endif %}
+    {% if 'channel' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'channel': notify_channel }) %}
+    {% endif %}
+    {% if 'sticky' in notify_data %}
+      {% set message.data = dict(message.data, **{ 'sticky': "true" }) %}
+    {% endif %}
+      {% set message.data = dict(message.data, **{ 'url': "/todo?entity_id=" ~ to_do_list, 'clickAction': "/todo?entity_id=" ~ to_do_list }) %}
+    {{ message.data }}
+
+  # Capteurs à reporter dans le message texte - par défaut
+  all_sensors: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      {% if 0 <= state.state | int(-1) <= battery_level | int and state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' @ ' ~ state.state ~ '%'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['on', 'low']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est faible !'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  sensors: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      {% if 0 <= state.state | int(-1) <= battery_level | int and state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' @ ' ~ state.state ~ '%'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['on', 'low']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est faible !'] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  unavailable_sensors: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  # Capteurs à reporter dans le message vocal
+
+  sensors_names: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      {% if 0 <= state.state | int(-1) <= battery_level | int and state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['on', 'low']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {{low_battery.sensors | join(', ')}}
+
+  unavailable_sensors_names: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id not in all_exclude_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {{low_battery.sensors | join(', ')}}
+
+  # Capteurs de batterie pour groupe personnalisé
+
+  all_sensors_custom_group: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      {% if 0 <= state.state | int(-1) <= custom_group_battery_level | int and state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' @ ' ~ state.state ~ '%'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['on', 'low']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est faible !'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  sensors_custom_group: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      {% if 0 <= state.state | int(-1) <= custom_group_battery_level | int and state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' @ ' ~ state.state ~ '%'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['on', 'low']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est faible !'] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  unavailable_sensors_custom_group: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name ~ ' est ' ~ state.state ~ ' !'] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  # Capteurs à reporter dans le message vocal groupe personnalisé
+
+  sensors_names_custom_group: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery') %}
+      {% if 0 <= state.state | int(-1) <= custom_group_battery_level | int and state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['on', 'low']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  unavailable_sensors_names_custom_group: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% for state in states.sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {% for state in states.binary_sensor
+      | rejectattr('attributes.device_class', 'undefined')
+      | selectattr('attributes.device_class', '==', 'battery')
+      | selectattr('state', 'in', ['unavailable', 'unknown']) %}
+      {% if state.entity_id in custom_group_sensors %}
+        {% set low_battery.sensors = low_battery.sensors + [state.name] %}
+      {% endif %}
+    {% endfor %}
+    {{ low_battery.sensors | join(', ') }}
+
+  # Capteurs pour le message de notification facile
+
+  easy_notify_message: >-
+    {% set low_battery = namespace(sensors=[]) %}
+    {% if sensor_selection == 'enable_battery_sensors_custom_group' and notify_message == 'all_sensors' %}
+      {{all_sensors_custom_group|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_battery_sensors_custom_group' and notify_message == 'sensors'%}
+      {{sensors_custom_group|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_battery_sensors_custom_group' and notify_message == 'unavailable_sensors'%}
+      {{unavailable_sensors_custom_group|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_all_sensors' and notify_message == 'all_sensors' %}
+      {{all_sensors|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_all_sensors' and notify_message == 'sensors'%}
+      {{sensors|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_all_sensors' and notify_message == 'unavailable_sensors'%}
+      {{unavailable_sensors|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_all_and_custom_group_sensors' and notify_message == 'all_sensors' %}
+      {{all_sensors|replace(', ', '\n')}}{{'\n'}}{{all_sensors_custom_group|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_all_and_custom_group_sensors' and notify_message == 'sensors'%}
+      {{sensors|replace(', ', '\n')}}{{'\n'}}{{sensors_custom_group|replace(', ', '\n')}}
+    {% elif sensor_selection == 'enable_all_and_custom_group_sensors' and notify_message == 'unavailable_sensors'%}
+      {{unavailable_sensors|replace(', ', '\n')}}{{'\n'}}{{unavailable_sensors_custom_group|replace(', ', '\n')}}
+    {% else %}
+      []
+    {% endif %}
+
+triggers:
+  - trigger: state
+    entity_id: !input button_entity
+    id: "t0"
+  - trigger: time
+    at: !input time
+    id: "t1"
+
+# Toutes les Conditions
+condition:
+  #Conditions de déclenchement
+  - condition: or
+    conditions:
+      - condition: and # déclenché par assistant bouton
+        conditions:
+          - condition: trigger
+            id: "t0"
+          - "{{ include_button == 'enable_button_trigger' }}"
+      - condition: and # déclenché par heure
+        conditions:
+          - condition: trigger
+            id: "t1"
+          - "{{ include_time == 'time_enabled' }}"
+
+  # Vérifier l'Option Jour de la Semaine
+  - condition: or
+    conditions:
+      - "{{ include_time == 'time_disabled' }}"
+      - condition: and
+        conditions:
+          - condition: time
+            weekday: !input weekday_options
+          - "{{ include_time == 'time_enabled' }}"
+      - condition: trigger
+        id: "t0"
+
+  # Conditions Globales
+  - condition: and
+    conditions: !input global_conditions
+
+action:
+  - choose:
+      - alias: "Effectuer les actions personnalisées"
+        conditions:
+          - condition: template
+            value_template: "{{ include_custom_actions == 'enable_custom_actions' }}"
+        sequence: !input custom_actions
+  - choose:
+      - alias: "Utiliser les options de notification facile"
+        conditions:
+          - condition: template
+            value_template: "{{ (include_easy_notify == 'enable_easy_notify') or (include_easy_notify == 'enable_easy_okay_notify') }}"
+          - condition: template
+            value_template: "{{ notify_device | length > 0 }}"
+        sequence:
+          - alias: "Envoyer une notification à chaque appareil"
+            repeat:
+              for_each: !input notify_device
+              sequence:
+                - choose:
+                    - alias: "Des capteurs ont été trouvés"
+                      conditions:
+                        - "{{ easy_notify_message != '' }}"
+                      sequence:
+                        - choose:
+                            - alias: "Notification facile sans bouton d'action"
+                              conditions:
+                                - "{{ notify_action_buttons == 'disabled_notify_action_buttons' }}"
+                              sequence:
+                                - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+                                  data:
+                                    title: !input notify_title
+                                    message: "{{easy_notify_message}}"
+                                    data: "{{ device_message_data }}"
+                            - alias: "Notification facile avec bouton d'action"
+                              conditions:
+                                - "{{ notify_action_buttons != 'disabled_notify_action_buttons' }}"
+                              sequence:
+                                - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+                                  data:
+                                    title: !input notify_title
+                                    message: "{{easy_notify_message}}"
+                                    data: "{{ device_message_data_action_button }}"
+                    - alias: "Aucun capteur n'a été trouvé"
+                      conditions:
+                        - "{{ easy_notify_message == '' }}"
+                        - "{{ include_easy_notify == 'enable_easy_okay_notify' }}"
+                      sequence:
+                        - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+                          data:
+                            title: !input notify_title
+                            message: !input notify_okay_message
+                            data: "{{ device_message_data }}"
+  - choose:
+      - alias: "Utiliser les options de notification persistante facile"
+        conditions:
+          - condition: template
+            value_template: "{{ (include_persistent_notification == 'enable_persistent_notification') or (include_persistent_notification == 'enable_persistent_okay_notification') }}"
+        sequence:
+          - choose:
+              - alias: "Des capteurs ont été trouvés"
+                conditions:
+                  - "{{ easy_notify_message != '' }}"
+                sequence:
+                  - action: persistent_notification.create
+                    data:
+                      title: "🪫 {{notify_title}}"
+                      message: "{{easy_notify_message}}"
+              - alias: "Aucun capteur n'a été trouvé"
+                conditions:
+                  - "{{ easy_notify_message == '' }}"
+                  - "{{ include_persistent_notification == 'enable_persistent_okay_notification' }}"
+                sequence:
+                  - action: persistent_notification.create
+                    data:
+                      title: "🪫 {{notify_title}}"
+                      message: !input notify_okay_message
+  - choose:
+      - alias: "Vérifier si le bouton d'action Liste de Tâches est activé"
+        conditions:
+          - condition: template
+            value_template: "{{ (include_easy_notify == 'enable_easy_notify') or (include_easy_notify == 'enable_easy_okay_notify') }}"
+          - condition: template
+            value_template: "{{(notify_action_buttons == 'enable_to_do_list_button') or (notify_action_buttons == 'enable_to_do_list_button_and_confirmation')}}"
+          - condition: template
+            value_template: "{{ notify_device | length > 0 }}"
+        sequence:
+          - alias: "Attendre une réponse des boutons d'action"
+            wait_for_trigger:
+              - trigger: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ action_button_to_do }}"
+              - trigger: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ action_button_cancel }}"
+          - choose:
+              - alias: "Vérifier si le message de confirmation est désactivé"
+                conditions:
+                  - condition: template
+                    value_template: "{{ notify_action_buttons == 'enable_to_do_list_button' }}"
+                sequence:
+                  - if:
+                      - alias: "Confirmation des boutons d'action"
+                        condition: template
+                        value_template: "{{ wait.trigger.idx is defined }}"
+                    then:
+                      - alias: "Effectuer les actions choisies"
+                        choose:
+                          - conditions: "{{ wait.trigger.event.data.action == action_button_to_do }}"
+                            sequence:
+                              - alias: "Ajouter tâche à la liste de tâches"
+                                action: todo.add_item
+                                metadata: {}
+                                data:
+                                  item: !input to_do_task_title
+                                  description: "{{easy_notify_message}}"
+                                target:
+                                  entity_id: !input to_do_list
+                          - conditions: "{{ wait.trigger.event.data.action == action_button_cancel }}"
+                            sequence:
+                              - stop: "Arrêter l'automatisation"
+              - alias: "Vérifier si le message de confirmation est activé"
+                conditions:
+                  - condition: template
+                    value_template: "{{ notify_action_buttons == 'enable_to_do_list_button_and_confirmation' }}"
+                sequence:
+                  - if:
+                      - alias: "Confirmation des boutons d'action"
+                        condition: template
+                        value_template: "{{ wait.trigger.idx is defined }}"
+                    then:
+                      - alias: "Effectuer les actions choisies"
+                        choose:
+                          - conditions: "{{ wait.trigger.event.data.action == action_button_to_do }}"
+                            sequence:
+                              - alias: "Ajouter tâche à la liste de tâches"
+                                action: todo.add_item
+                                metadata: {}
+                                data:
+                                  item: !input to_do_task_title
+                                  description: "{{easy_notify_message}}"
+                                target:
+                                  entity_id: !input to_do_list
+                              - alias: "Envoyer une notification à chaque appareil"
+                                repeat:
+                                  for_each: !input notify_device
+                                  sequence:
+                                    - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+                                      data:
+                                        title: !input action_button_confirmation_title
+                                        message: !input action_button_confirmation_message
+                                        data: "{{ device_confirmation_message_data }}"
+                          - conditions: "{{ wait.trigger.event.data.action == action_button_cancel }}"
+                            sequence:
+                              - alias: "Envoyer une notification à chaque appareil"
+                                repeat:
+                                  for_each: !input notify_device
+                                  sequence:
+                                    - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+                                      data:
+                                        title: !input action_button_confirmation_title
+                                        message: !input cancel_action_button_confirmation_message
+                                        data: "{{ device_message_data }}"
